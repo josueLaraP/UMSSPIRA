@@ -13,7 +13,7 @@ export const personalDataSchema = z.object({
   correo: z.string().trim().toLowerCase().email('Correo no válido').max(100),
   telefono: z.string().trim().regex(/^\d{8}$/, 'Debe tener 8 dígitos'),
   carreraId: z.string().min(1, 'Selecciona tu carrera'),
-  anioEgreso: z.coerce.number().int().min(1970).max(new Date().getFullYear()),
+  anioEgreso: z.coerce.number().int().min(1970).max(new Date().getFullYear(), { message: `El año no puede ser mayor a ${new Date().getFullYear()}` }),
   codigoSis: z.string().trim().regex(/^\d{6,9}$/, 'Código SIS de 6 a 9 dígitos'),
 });
 
