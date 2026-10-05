@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Lock, Globe, MapPin, Phone, Mail, Save, Pencil, Loader2 } from 'lucide-react';
+import { Lock, Globe, MapPin, Mail, Save, Pencil, Loader2, User } from 'lucide-react';
 import { cn } from '@/shared/utils/cn';
 import type { Company, UpdateCompanyPayload } from '@umsspira/shared-types';
 
@@ -78,6 +78,8 @@ export function EditCompanyForm({ company, onCancel, onSubmit }: EditCompanyForm
 
     setIsSubmitting(true);
     try {
+      // Simulamos 1 segundo de carga para que la presentación se vea más real
+      await new Promise(resolve => setTimeout(resolve, 1000));
       const { id, nit, ...payload } = formData;
       await onSubmit(payload);
     } finally {
@@ -128,16 +130,16 @@ export function EditCompanyForm({ company, onCancel, onSubmit }: EditCompanyForm
               type="text"
               value={formData.nit}
               disabled
-              className="w-full px-3 py-2 bg-[#EEE9DF] border border-[#C9C1B1] rounded-lg text-sm leading-[22px] text-[#2C3B40] cursor-not-allowed"
+              className="w-full pl-10 pr-3 py-2 bg-[#EEE9DF] border border-[#C9C1B1] rounded-lg text-sm leading-[22px] text-[#2C3B40] cursor-not-allowed"
             />
-            <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#C9C1B1]" />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#C9C1B1]" />
           </div>
-          <p className="text-[11px] leading-[14px] text-[#C9C1B1] mt-1">No editable</p>
+          <p className="text-[11px] leading-[14px] text-[#C9C1B1] mt-1 text-right flex items-center justify-end gap-1"><Lock className="w-3 h-3"/> No editable</p>
         </div>
 
         <div>
           <label className="text-[13px] font-semibold text-[#182632] leading-[18px]">
-            Tamano de la empresa <span className="text-red-500">*</span>
+            Tamaño de la empresa <span className="text-red-500">*</span>
           </label>
           <select
             value={formData.tamano}
@@ -156,12 +158,15 @@ export function EditCompanyForm({ company, onCancel, onSubmit }: EditCompanyForm
           <label className="text-[13px] font-semibold text-[#182632] leading-[18px]">
             Sitio web <span className="text-red-500">*</span>
           </label>
-          <input
-            type="text"
-            value={formData.sitioWeb}
-            onChange={(e) => handleChange('sitioWeb', e.target.value)}
-            className={cn(inputClass('sitioWeb'), 'mt-1')}
-          />
+          <div className="relative mt-1">
+            <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#C9C1B1]" />
+            <input
+              type="text"
+              value={formData.sitioWeb}
+              onChange={(e) => handleChange('sitioWeb', e.target.value)}
+              className={cn(inputClass('sitioWeb'), 'pl-10')}
+            />
+          </div>
           {errors.sitioWeb && (
             <p className="text-[11px] leading-[14px] text-red-500 mt-1">{errors.sitioWeb}</p>
           )}
@@ -169,19 +174,22 @@ export function EditCompanyForm({ company, onCancel, onSubmit }: EditCompanyForm
 
         <div>
           <label className="text-[13px] font-semibold text-[#182632] leading-[18px]">
-            Ubicacion <span className="text-red-500">*</span>
+            Ubicación <span className="text-red-500">*</span>
           </label>
-          <input
-            type="text"
-            value={formData.direccion}
-            onChange={(e) => handleChange('direccion', e.target.value)}
-            className={cn(inputClass('direccion'), 'mt-1')}
-          />
+          <div className="relative mt-1">
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#C9C1B1]" />
+            <input
+              type="text"
+              value={formData.direccion}
+              onChange={(e) => handleChange('direccion', e.target.value)}
+              className={cn(inputClass('direccion'), 'pl-10')}
+            />
+          </div>
         </div>
 
         <div className="md:col-span-2">
           <label className="text-[13px] font-semibold text-[#182632] leading-[18px]">
-            Descripcion <span className="text-red-500">*</span>
+            Descripción <span className="text-red-500">*</span>
           </label>
           <textarea
             value={formData.descripcion}
@@ -216,25 +224,31 @@ export function EditCompanyForm({ company, onCancel, onSubmit }: EditCompanyForm
           </label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
             <div>
-              <input
-                type="tel"
-                value={formData.telefono}
-                onChange={(e) => handleChange('telefono', e.target.value)}
-                placeholder="+591 71234567"
-                className={inputClass('telefono')}
-              />
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#C9C1B1]" />
+                <input
+                  type="tel"
+                  value={formData.telefono}
+                  onChange={(e) => handleChange('telefono', e.target.value)}
+                  placeholder="+591 71234567"
+                  className={cn(inputClass('telefono'), 'pl-10')}
+                />
+              </div>
               {errors.telefono && (
                 <p className="text-[11px] leading-[14px] text-red-500 mt-1">{errors.telefono}</p>
               )}
             </div>
             <div>
-              <input
-                type="email"
-                value={formData.correo}
-                onChange={(e) => handleChange('correo', e.target.value)}
-                placeholder="contacto@empresa.com"
-                className={inputClass('correo')}
-              />
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#C9C1B1]" />
+                <input
+                  type="email"
+                  value={formData.correo}
+                  onChange={(e) => handleChange('correo', e.target.value)}
+                  placeholder="contacto@empresa.com"
+                  className={cn(inputClass('correo'), 'pl-10')}
+                />
+              </div>
               {errors.correo && (
                 <p className="text-[11px] leading-[14px] text-red-500 mt-1">{errors.correo}</p>
               )}
@@ -248,7 +262,7 @@ export function EditCompanyForm({ company, onCancel, onSubmit }: EditCompanyForm
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="px-5 py-2 bg-[#C9C1B1] text-[#182632] text-sm font-semibold tracking-[0.5px] rounded-lg hover:bg-[#B5AC9A] disabled:opacity-50 transition-colors"
+          className="px-5 py-2 bg-[#EEE9DF] text-[#182632] text-sm font-semibold tracking-[0.5px] rounded-lg hover:bg-[#C9C1B1] disabled:opacity-50 transition-colors"
         >
           Cancelar
         </button>

@@ -1,27 +1,25 @@
 'use client';
 
 import { useState } from 'react';
-import type {
-  Company,
-  UpdateCompanyPayload,
-} from '@umsspira/shared-types';
+import type { Company, UpdateCompanyPayload } from '@umsspira/shared-types';
+import { ArrowLeft } from 'lucide-react'; // Importamos el icono para el botón volver
 
 import { CompanyDetails } from './company-details';
 import { CompanyHeader } from './company-header';
 import { EditCompanyForm } from '@/shared/components/edit-company-form';
-
+import { CompanyDropdown } from '@/shared/components/company-dropdown';
 const companyMock: Company = {
   id: '1',
-  nombre: 'Panificadora San Jose S.R.L.',
+  nombre: 'TechSolutions S.A.',
   nit: '1023456019',
   descripcion:
-    'Panificadora San Jose S.R.L. es una empresa dedicada a la elaboración y comercialización de productos de panadería y repostería de alta calidad, consolidada con más de 15 años de experiencia en el mercado local.',
-  telefono: '+591 4 4251234',
-  correo: 'contacto@panificadorasanjose.com',
-  sitioWeb: 'https://www.panificadorasanjose.com',
-  direccion: 'Avenida San Martin #450, Zona Norte, Cochabamba, Bolivia',
-  tamano: '50 - 100 empleados',
-  eslogan: 'Calidad y tradición para cada día.',
+    'Somos una empresa de tecnología enfocada en desarrollar soluciones de software que impulsan la transformación digital de nuestros clientes. Contamos con más de 15 años de experiencia en el mercado.',
+  telefono: '+591 71234567',
+  correo: 'contacto@techsolutions.com',
+  sitioWeb: 'https://www.techsolutions.com',
+  direccion: 'Av. San Martin y Costanera, Piso 12, Cochabamba, Bolivia',
+  tamano: '50 - 200 empleados',
+  eslogan: 'Innovación tecnológica para un mejor futuro.',
 };
 
 export default function CompaniesPage() {
@@ -36,26 +34,47 @@ export default function CompaniesPage() {
     setIsEditing(false);
   }
 
-  async function handleSubmit(
-    data: UpdateCompanyPayload,
-  ): Promise<void> {
+  async function handleSubmit(data: UpdateCompanyPayload): Promise<void> {
     setCompany((currentCompany) => ({
       ...currentCompany,
       ...data,
     }));
-
+    // Después de guardar, cerramos el formulario automáticamente
     setIsEditing(false);
   }
 
   if (isEditing) {
     return (
       <div className="min-h-screen bg-[#EEE9DF] p-6 sm:p-8">
-        <div className="mx-auto max-w-7xl">
-          <EditCompanyForm
-            company={company}
-            onCancel={handleCancel}
-            onSubmit={handleSubmit}
+        <div className="mx-auto max-w-7xl space-y-6">
+          {/* Banner siempre visible como en el mockup */}
+          <CompanyHeader 
+            companyName={company.nombre} 
+            companySlogan={company.eslogan}
           />
+          
+          <div>
+            {/* Botón Volver */}
+            <button 
+              onClick={handleCancel}
+              className="flex items-center text-sm font-semibold text-[#182632] hover:text-[#A35139] transition-colors mb-4"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" /> Volver
+            </button>
+            
+            {/* Pestaña "Información general" */}
+            <div className="border-b border-[#C9C1B1] mb-6">
+              <span className="inline-block border-b-2 border-[#A35139] text-[#182632] font-semibold text-sm pb-2 px-1">
+                Información general
+              </span>
+            </div>
+
+            <EditCompanyForm
+              company={company}
+              onCancel={handleCancel}
+              onSubmit={handleSubmit}
+            />
+          </div>
         </div>
       </div>
     );
@@ -64,9 +83,18 @@ export default function CompaniesPage() {
   return (
     <div className="min-h-screen bg-[#EEE9DF] p-6 sm:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        {/* Componente HU-02: Banner y Encabezado de la empresa */}
-        <CompanyHeader />
-
+        <div className="flex justify-end w-full">
+          <CompanyDropdown 
+            companyName={company.nombre} 
+            companyRole="Empresa empleadora" 
+          />
+        </div>
+        {/* Componente HU-02: Banner y Encabezado de la empresa actualizado */}
+        <CompanyHeader 
+          companyName={company.nombre} 
+          companySlogan={company.eslogan}
+        />
+        
         {/* Componente HU-03: Detalles, Descripcion y Contacto */}
         <CompanyDetails
           description={company.descripcion}
