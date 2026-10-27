@@ -10,7 +10,9 @@ export class VacantesService {
       where: { id_usuario: idUsuario }
     });
 
-    if (!empresa) return [];
+    if (!empresa) {
+      return [];
+    }
 
     return this.prisma.vacante.findMany({
       where: { id_empresa: empresa.id },
