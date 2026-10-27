@@ -6,8 +6,8 @@ export class VacantesController {
   constructor(private readonly vacantesService: VacantesService) {}
 
   @Get('mis-vacantes')
-  async listar(@Req() req: { user?: { id?: string } }) {
-    const idUsuario = req.user?.id || 'ID_TEMPORAL_PARA_PRUEBAS';
+  async listar(@Req() req: any) {
+    const idUsuario = req.user?.id || req.user?.sub; 
     return this.vacantesService.obtenerMisVacantes(idUsuario);
   }
 
