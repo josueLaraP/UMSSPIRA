@@ -78,3 +78,20 @@ export async function getApplicantsByVacancy(vacancyId: string): Promise<Applica
 
   return MOCK_APPLICANTS;
 }
+
+export async function getApplicantById(
+  vacancyId: string,
+  applicantId: string
+): Promise<Applicant | null> {
+  // Simulación de retraso de red
+  await new Promise((resolve) => setTimeout(resolve, 250));
+
+  /*
+    EN EL FUTURO:
+
+    const res = await fetch(`/api/v1/vacancies/${vacancyId}/applicants/${applicantId}`);
+    return await res.json();
+  */
+
+  return MOCK_APPLICANTS.find((a) => a.id === applicantId) ?? null;
+}

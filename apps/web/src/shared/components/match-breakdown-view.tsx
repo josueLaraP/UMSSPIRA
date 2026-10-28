@@ -7,7 +7,7 @@ export function MatchBreakdownView({
   onBack,
 }: {
   applicant: Applicant;
-  onBack: () => void;
+  onBack?: () => void;
 }) {
   const initials = applicant.name
     .split(" ")
@@ -16,13 +16,15 @@ export function MatchBreakdownView({
 
   return (
     <div className="space-y-6">
-      {/* Botón Volver */}
-      <button
-        onClick={onBack}
-        className="text-sm font-semibold text-[#1B2632] hover:underline flex items-center gap-1"
-      >
-        ← Volver
-      </button>
+      {/* Botón Volver (solo aparece si se le pasa onBack) */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="text-sm font-semibold text-[#1B2632] hover:underline flex items-center gap-1"
+        >
+          ← Volver
+        </button>
+      )}
 
       {/* Cabecera del Candidato */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EEE9DF] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
