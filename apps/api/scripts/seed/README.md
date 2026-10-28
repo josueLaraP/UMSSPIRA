@@ -10,9 +10,19 @@ pnpm --filter api db:seed:demo
 
 ## Qué queda disponible
 
+El administrador de demostración queda asociado a Sistemas e Informática. Si Informática ya existe, se conserva su UUID y nombre, incluidas las variantes con o sin tilde y el nombre histórico `Ingeniera Informatica`. No se crea una segunda carrera.
+
+Para añadir únicamente Informática al administrador existente, sin cargar las demás épicas:
+
+```sh
+pnpm --filter api db:seed:informatica
+```
+
+Este comando exige `APP_ENV=epic`, `dev` o `test` y la cuenta administradora de demostración ya creada. No modifica cuentas, contraseñas ni asignaciones existentes. En bases nuevas, `db:seed:demo` ya incluye esta carga después de crear las cuentas. `db:seed` incorpora la carrera al catálogo sin crear ni asignar usuarios.
+
 | Parte        | Datos iniciales                                                                                                               |
 | ------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| Catálogos    | Roles, permisos, Ingeniería de Sistemas, PDF/JPG/PNG, modalidades de trabajo, cinco áreas profesionales y tipo de reporte     |
+| Catálogos    | Roles, permisos, Ingeniería de Sistemas e Ingeniería Informática, PDF/JPG/PNG, modalidades de trabajo, áreas profesionales y tipo de reporte |
 | Acceso       | Titulado, administrador y empresa con sus perfiles relacionados                                                               |
 | Épica 1      | Cuatro solicitudes: pendiente, aprobada, observada y rechazada; detalles, PDF descargables, dictámenes y auditoría de ejemplo |
 | Épica 2      | Formación, experiencia laboral vigente y certificación del titulado                                                           |
