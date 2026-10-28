@@ -1,16 +1,25 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../shared/infrastructure/database/prisma.module';
+import { AuthModule } from '../auth/auth.module';
+import { RegistrationsModule } from '../registrations/registrations.module';
 import { companiesProviders } from './infrastructure/providers/companies.providers';
 import { GetCompanyHeaderController } from './http/controllers/get-company-header.controller';
 import { GetCompanyContactController } from './http/controllers/get-company-contact.controller';
 import { UpdateCompanyProfileController } from './http/controllers/update-company-profile.controller';
+import { ValidateCompanyInvitationController } from './http/controllers/validate-company-invitation.controller';
+import { ActivateCompanyInvitationController } from './http/controllers/activate-company-invitation.controller';
+import { CreateCompanyInvitationController } from './http/controllers/create-company-invitation.controller';
 
 @Module({
-  imports: [PrismaModule],
+  // AuthModule aporta PASSWORD_HASHER; RegistrationsModule, el cifrado de la cola de correos.
+  imports: [PrismaModule, AuthModule, RegistrationsModule],
   controllers: [
     GetCompanyHeaderController,
     GetCompanyContactController,
     UpdateCompanyProfileController,
+    ValidateCompanyInvitationController,
+    ActivateCompanyInvitationController,
+    CreateCompanyInvitationController,
   ],
   providers: companiesProviders,
 })
