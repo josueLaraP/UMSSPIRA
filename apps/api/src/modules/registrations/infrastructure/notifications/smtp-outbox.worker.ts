@@ -6,7 +6,8 @@ import { z } from 'zod';
 import { PrismaService } from '../../../../shared/infrastructure/database/prisma.service';
 import { NodeRegistrationSecurity } from '../security/registration-security';
 
-const messageSchema = z.object({ to: z.email(), subject: z.string(), text: z.string() });
+const messageSchema = z.object({ to: z.email(), subject: z.string(), text: z.string(), html: z.string().optional() });
+
 
 @Injectable()
 export class SmtpOutboxWorker implements OnModuleInit, OnModuleDestroy {
