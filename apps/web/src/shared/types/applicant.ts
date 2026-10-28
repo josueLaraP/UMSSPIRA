@@ -13,6 +13,14 @@ export interface Applicant {
   location: string;
   experienceLevel: ExperienceLevel;
   status: ApplicantStatus;
-  matchPercentage: number;
-  skills: SkillMatch[];
+  /**
+   * Porcentaje devuelto por el motor de coincidencia (Epic 3/5).
+   * El frontend NUNCA lo calcula. Si no viene, es null (CA-10).
+   */
+  matchPercentage: number | null;
+  /**
+   * Desglose por habilidad devuelto por el motor de coincidencia.
+   * null o vacío = no disponible.
+   */
+  skills: SkillMatch[] | null;
 }
