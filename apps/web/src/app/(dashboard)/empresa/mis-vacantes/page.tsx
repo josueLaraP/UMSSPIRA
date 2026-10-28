@@ -97,7 +97,6 @@ export default function MisVacantesPage() {
   const handleConfirmarCierre = async () => {
     if (!vacanteACerrar) return;
     setIsCerrando(true);
-    
     try {
       const token = getAccessToken();
       const response = await fetch(`http://localhost:3000/api/v1/vacantes/${vacanteACerrar.id}/cerrar`, {
@@ -107,9 +106,7 @@ export default function MisVacantesPage() {
           'Authorization': `Bearer ${token}`
         }
       });
-
       if (!response.ok) throw new Error('Error al cerrar');
-
       setVacantes((prev) => 
         prev.map((v) => v.id === vacanteACerrar.id ? { ...v, estado: 'CERRADA' } : v)
       );
@@ -127,8 +124,8 @@ export default function MisVacantesPage() {
 
   const getBadgeStyle = (estado: string) => {
     switch(estado) {
-      case 'ACTIVA': return { bg: '#dcfce7', color: '#166534', dot: '#22c55e' };
-      case 'PAUSADA': return { bg: '#f3f4f6', color: '#4b5563', dot: '#9ca3af' };
+      case 'ACTIVA': return { bg: '#dcfce7', color: '#15803d', dot: '#22c55e' };
+      case 'PAUSADA': return { bg: '#fef3c7', color: '#b45309', dot: '#f59e0b' };
       case 'CERRADA': return { bg: '#e5e7eb', color: '#374151', dot: '#6b7280' };
       default: return { bg: '#f9fafb', color: '#9ca3af', dot: '#d1d5db' };
     }
@@ -136,17 +133,14 @@ export default function MisVacantesPage() {
 
   const vacantesFiltradas = vacantes.filter(v => {
     const matchSearch = v.titulo.toLowerCase().includes(searchTerm.toLowerCase());
-    
     let matchTab = activeTab === 'Todas';
     if (activeTab === 'Activas') matchTab = v.estado === 'ACTIVA';
     if (activeTab === 'Pausadas') matchTab = v.estado === 'PAUSADA';
     if (activeTab === 'Cerradas') matchTab = v.estado === 'CERRADA';
     if (activeTab === 'Borradores') matchTab = v.estado === 'BORRADOR';
-
     const matchEstado = filterEstado === 'Todos' || v.estado === filterEstado;
     const matchModalidad = filterModalidad === 'Todas' || v.modalidad === filterModalidad;
     const matchNivel = filterNivel === 'Todos' || v.nivel === filterNivel;
-    
     return matchSearch && matchTab && matchEstado && matchModalidad && matchNivel;
   });
 
@@ -156,68 +150,76 @@ export default function MisVacantesPage() {
     <div style={{ backgroundColor: 'var(--palladian)', minHeight: '100vh', padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         
-        <Link href="/empresa" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: 'var(--ink-70)', textDecoration: 'none', marginBottom: '1.5rem', fontSize: '0.875rem', fontWeight: 500 }}>
+        {/* Volver */}
+        <Link href="/empresa" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: 'var(--ink-70)', textDecoration: 'none', marginBottom: '1.5rem', fontSize: '0.875rem', fontWeight: 600 }}>
           <ArrowLeft size={16} /> Volver
         </Link>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ padding: '0.75rem', backgroundColor: '#fff', border: '1px solid var(--flame)', borderRadius: '0.75rem', color: 'var(--flame)' }}>
-              <FolderOpen size={28} />
-            </div>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 'bold', color: 'var(--ink)', margin: 0 }}>Mis vacantes publicadas</h1>
+        {/* HEADER — mismo layout, título más fuerte */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+          <div style={{ padding: '0.75rem', backgroundColor: 'var(--flame)', borderRadius: '0.75rem', color: '#fff', boxShadow: '0 4px 12px rgba(255,177,98,0.35)' }}>
+            <FolderOpen size={28} />
           </div>
-
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-              <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--ink-70)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Buscar</label>
-              <div style={{ position: 'relative', width: '220px' }}>
-                <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-70)' }} />
-                <input 
-                  type="text" 
-                  placeholder="Buscar por título" 
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  style={{ width: '100%', padding: '0.5rem 1rem 0.5rem 2.25rem', borderRadius: '0.5rem', border: '1px solid var(--oatmeal)', outline: 'none', fontSize: '0.875rem', color: 'var(--ink)' }} 
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-              <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--ink-70)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Estado</label>
-              <select value={filterEstado} onChange={(e) => setFilterEstado(e.target.value)} style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--oatmeal)', backgroundColor: '#fff', color: 'var(--ink)', fontSize: '0.875rem', outline: 'none' }}>
-                <option value="Todos">Todos</option>
-                <option value="ACTIVA">Activa</option>
-                <option value="PAUSADA">Pausada</option>
-                <option value="CERRADA">Cerrada</option>
-                <option value="BORRADOR">Borrador</option>
-              </select>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-              <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--ink-70)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Modalidad</label>
-              <select value={filterModalidad} onChange={(e) => setFilterModalidad(e.target.value)} style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--oatmeal)', backgroundColor: '#fff', color: 'var(--ink)', fontSize: '0.875rem', outline: 'none' }}>
-                <option value="Todas">Todas</option>
-                <option value="Remoto">Remoto</option>
-                <option value="Híbrido">Híbrido</option>
-                <option value="Presencial">Presencial</option>
-              </select>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-              <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--ink-70)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Nivel</label>
-              <select value={filterNivel} onChange={(e) => setFilterNivel(e.target.value)} style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--oatmeal)', backgroundColor: '#fff', color: 'var(--ink)', fontSize: '0.875rem', outline: 'none' }}>
-                <option value="Todos">Todos</option>
-                <option value="Junior">Junior</option>
-                <option value="Semi-Senior">Semi-Senior</option>
-                <option value="Senior">Senior</option>
-              </select>
-            </div>
+          <div>
+            <h1 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--ink)', margin: 0, letterSpacing: '-0.02em' }}>
+              Mis vacantes publicadas
+            </h1>
+            <p style={{ color: 'var(--ink-70)', fontSize: '0.9rem', margin: '0.2rem 0 0 0' }}>
+              Gestiona tus ofertas activas y revisa su estado
+            </p>
           </div>
         </div>
 
+        {/* FILTROS — misma estructura, labels más marcados */}
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: 1, minWidth: '220px' }}>
+            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--ink)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Buscar</label>
+            <div style={{ position: 'relative' }}>
+              <Search size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-70)' }} />
+              <input 
+                type="text" 
+                placeholder="Buscar por título..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ width: '100%', padding: '0.65rem 1rem 0.65rem 2.5rem', borderRadius: '0.5rem', border: '1.5px solid var(--oatmeal)', outline: 'none', fontSize: '0.875rem', color: 'var(--ink)', backgroundColor: '#fff' }} 
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: '150px' }}>
+            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--ink)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Estado</label>
+            <select value={filterEstado} onChange={(e) => setFilterEstado(e.target.value)} style={{ padding: '0.65rem 1rem', borderRadius: '0.5rem', border: '1.5px solid var(--oatmeal)', backgroundColor: '#fff', color: 'var(--ink)', fontSize: '0.875rem', outline: 'none', cursor: 'pointer', fontWeight: 500 }}>
+              <option value="Todos">Todos</option>
+              <option value="ACTIVA">Activa</option>
+              <option value="PAUSADA">Pausada</option>
+              <option value="CERRADA">Cerrada</option>
+              <option value="BORRADOR">Borrador</option>
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: '150px' }}>
+            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--ink)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Modalidad</label>
+            <select value={filterModalidad} onChange={(e) => setFilterModalidad(e.target.value)} style={{ padding: '0.65rem 1rem', borderRadius: '0.5rem', border: '1.5px solid var(--oatmeal)', backgroundColor: '#fff', color: 'var(--ink)', fontSize: '0.875rem', outline: 'none', cursor: 'pointer', fontWeight: 500 }}>
+              <option value="Todas">Todas</option>
+              <option value="Remoto">Remoto</option>
+              <option value="Híbrido">Híbrido</option>
+              <option value="Presencial">Presencial</option>
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: '150px' }}>
+            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--ink)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Nivel</label>
+            <select value={filterNivel} onChange={(e) => setFilterNivel(e.target.value)} style={{ padding: '0.65rem 1rem', borderRadius: '0.5rem', border: '1.5px solid var(--oatmeal)', backgroundColor: '#fff', color: 'var(--ink)', fontSize: '0.875rem', outline: 'none', cursor: 'pointer', fontWeight: 500 }}>
+              <option value="Todos">Todos</option>
+              <option value="Junior">Junior</option>
+              <option value="Semi-Senior">Semi-Senior</option>
+              <option value="Senior">Senior</option>
+            </select>
+          </div>
+        </div>
+
+        {/* TABS — mismo layout, activa más contrastada */}
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
           {['Todas', 'Activas', 'Pausadas', 'Cerradas', 'Borradores'].map((tab) => {
             const isActive = activeTab === tab;
@@ -233,31 +235,31 @@ export default function MisVacantesPage() {
                 onClick={() => setActiveTab(tab)}
                 style={{ 
                   display: 'flex', alignItems: 'center', gap: '0.5rem',
-                  padding: '0.5rem 1rem', borderRadius: '2rem', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
-                  backgroundColor: isActive ? '#fff' : 'transparent', 
-                  color: isActive ? 'var(--ink)' : 'var(--ink-70)',
-                  border: isActive ? '1px solid var(--oatmeal)' : '1px solid transparent',
-                  boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  padding: '0.6rem 1.15rem', borderRadius: '2rem', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer',
+                  backgroundColor: isActive ? 'var(--ink)' : '#fff', 
+                  color: isActive ? '#fff' : 'var(--ink)',
+                  border: isActive ? '2px solid var(--ink)' : '2px solid var(--oatmeal)',
+                  boxShadow: isActive ? '0 4px 12px rgba(27,38,50,0.2)' : 'none',
                   transition: 'all 0.2s'
                 }}
               >
-                {tab === 'Todas' && <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--flame)' }}></div>}
-                {tab !== 'Todas' && <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: tab === 'Activas' ? '#22c55e' : tab === 'Pausadas' ? '#9ca3af' : tab === 'Cerradas' ? '#4b5563' : '#3b82f6' }}></div>}
-                {tab} ({count})
+                <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: tab === 'Todas' ? 'var(--flame)' : tab === 'Activas' ? '#22c55e' : tab === 'Pausadas' ? '#f59e0b' : tab === 'Cerradas' ? '#6b7280' : '#3b82f6' }}></div>
+                {tab} <span style={{ opacity: 0.75, fontWeight: 500 }}>({count})</span>
               </button>
             );
           })}
         </div>
 
+        {/* TABLA — mismo layout, header más fuerte + hover */}
         <div style={{ backgroundColor: '#fff', borderRadius: '0.75rem', border: '1px solid var(--oatmeal)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '40px 2.5fr 1fr 1fr 1fr 1fr 120px', gap: '1rem', padding: '1rem 1.5rem', borderBottom: '1px solid var(--oatmeal)', fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--ink-70)', textTransform: 'uppercase', alignItems: 'center', borderRadius: '0.75rem 0.75rem 0 0' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '40px 2.5fr 1fr 1fr 1fr 1fr 120px', gap: '1rem', padding: '1rem 1.5rem', backgroundColor: '#f8f5f1', borderBottom: '2px solid var(--oatmeal)', fontSize: '0.75rem', fontWeight: 800, color: 'var(--ink)', textTransform: 'uppercase', letterSpacing: '0.05em', alignItems: 'center', borderRadius: '0.75rem 0.75rem 0 0' }}>
             <div><input type="checkbox" style={{ cursor: 'pointer' }} /></div>
             <div>Título</div>
             <div>Modalidad</div>
-            <div>Nivel de experiencia</div>
+            <div>Nivel</div>
             <div>Estado</div>
-            <div>Fecha de publicación</div>
+            <div>Fecha</div>
             <div style={{ textAlign: 'center' }}>Acciones</div>
           </div>
 
@@ -270,59 +272,79 @@ export default function MisVacantesPage() {
               const badge = getBadgeStyle(vacante.estado);
               const isLast = index === vacantesFiltradas.length - 1;
               return (
-                <div key={vacante.id} style={{ display: 'grid', gridTemplateColumns: '40px 2.5fr 1fr 1fr 1fr 1fr 120px', gap: '1rem', padding: '1.25rem 1.5rem', borderBottom: !isLast ? '1px solid #f3f4f6' : 'none', alignItems: 'center', fontSize: '0.875rem', borderRadius: isLast ? '0 0 0.75rem 0.75rem' : 0 }}>
+                <div 
+                  key={vacante.id} 
+                  style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: '40px 2.5fr 1fr 1fr 1fr 1fr 120px', 
+                    gap: '1rem', 
+                    padding: '1.25rem 1.5rem', 
+                    borderBottom: !isLast ? '1px solid #f3f4f6' : 'none', 
+                    alignItems: 'center', 
+                    fontSize: '0.875rem', 
+                    borderRadius: isLast ? '0 0 0.75rem 0.75rem' : 0,
+                    borderLeft: '4px solid transparent',
+                    transition: 'all 0.15s'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fafafa'; e.currentTarget.style.borderLeftColor = 'var(--flame)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.borderLeftColor = 'transparent'; }}
+                >
                   
                   <div><input type="checkbox" style={{ cursor: 'pointer' }} /></div>
 
                   <div>
-                    <div style={{ fontWeight: 'bold', color: 'var(--ink)' }}>{vacante.titulo}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--ink-70)', marginTop: '0.25rem' }}>{vacante.tecnologias}</div>
+                    <div style={{ fontWeight: 700, color: 'var(--ink)', fontSize: '0.95rem' }}>{vacante.titulo}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--ink-70)', marginTop: '0.25rem' }}>{vacante.tecnologias}</div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--ink-70)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--ink-70)', fontWeight: 500 }}>
                     {vacante.modalidad === 'Remoto' ? <Monitor size={16} /> : <MapPin size={16} />} {vacante.modalidad}
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--ink-70)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--ink-70)', fontWeight: 500 }}>
                     <BarChart2 size={16} /> {vacante.nivel}
                   </div>
 
                   <div>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', backgroundColor: badge.bg, color: badge.color, padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                      <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: badge.dot }}></div>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', backgroundColor: badge.bg, color: badge.color, padding: '0.4rem 0.85rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                      <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: badge.dot }}></div>
                       {vacante.estado}
                     </span>
                   </div>
 
-                  <div style={{ color: 'var(--ink-70)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Calendar size={16} /> {vacante.fecha_publicacion}
+                  <div style={{ color: 'var(--ink-70)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', fontWeight: 500 }}>
+                    <Calendar size={15} /> {vacante.fecha_publicacion}
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', position: 'relative' }}>
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem', position: 'relative' }}>
                     
-                    <button style={{ border: '1px solid var(--oatmeal)', background: 'none', padding: '0.4rem', borderRadius: '0.4rem', cursor: 'pointer', color: 'var(--ink)' }}>
+                    <button style={{ border: '1.5px solid var(--oatmeal)', background: '#fff', padding: '0.5rem', borderRadius: '0.5rem', cursor: 'pointer', color: 'var(--ink)', transition: 'all 0.15s' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--flame)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'var(--flame)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.color = 'var(--ink)'; e.currentTarget.style.borderColor = 'var(--oatmeal)'; }}>
                       <Eye size={16} />
                     </button>
                     
-                    <button onClick={() => handleEditar(vacante.id)} style={{ border: '1px solid var(--oatmeal)', background: 'none', padding: '0.4rem', borderRadius: '0.4rem', cursor: 'pointer', color: 'var(--ink)' }}>
+                    <button onClick={() => handleEditar(vacante.id)} style={{ border: '1.5px solid var(--oatmeal)', background: '#fff', padding: '0.5rem', borderRadius: '0.5rem', cursor: 'pointer', color: 'var(--ink)', transition: 'all 0.15s' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--ink)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'var(--ink)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.color = 'var(--ink)'; e.currentTarget.style.borderColor = 'var(--oatmeal)'; }}>
                       <Pencil size={16} />
                     </button>
 
-                    <button onClick={() => setMenuAbierto(menuAbierto === vacante.id ? null : vacante.id)} style={{ border: '1px solid var(--oatmeal)', background: menuAbierto === vacante.id ? 'var(--palladian)' : 'none', padding: '0.4rem', borderRadius: '0.4rem', cursor: 'pointer', color: 'var(--ink)' }}>
+                    <button onClick={() => setMenuAbierto(menuAbierto === vacante.id ? null : vacante.id)} style={{ border: '1.5px solid var(--oatmeal)', background: menuAbierto === vacante.id ? 'var(--ink)' : '#fff', padding: '0.5rem', borderRadius: '0.5rem', cursor: 'pointer', color: menuAbierto === vacante.id ? '#fff' : 'var(--ink)', transition: 'all 0.15s' }}>
                       <MoreVertical size={16} />
                     </button>
 
                     {menuAbierto === vacante.id && (
-                      <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: '0.5rem', backgroundColor: '#fff', border: '1px solid var(--oatmeal)', borderRadius: '0.5rem', padding: '0.5rem', width: '170px', zIndex: 20, boxShadow: '0 4px 12px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column', gap: '0.25rem', textAlign: 'left' }}>
-                        <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', background: 'none', border: 'none', width: '100%', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--ink)', borderRadius: '0.3rem' }}><Eye size={14} /> Ver detalle</button>
-                        <button onClick={() => handleEditar(vacante.id)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', background: 'none', border: 'none', width: '100%', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--ink)', borderRadius: '0.3rem' }}><Pencil size={14} /> Editar</button>
-                        <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', background: 'none', border: 'none', width: '100%', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--ink)', borderRadius: '0.3rem' }}><Pause size={14} /> Pausar</button>
+                      <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: '0.5rem', backgroundColor: '#fff', border: '1px solid var(--oatmeal)', borderRadius: '0.5rem', padding: '0.5rem', width: '180px', zIndex: 20, boxShadow: '0 8px 20px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column', gap: '0.25rem', textAlign: 'left' }}>
+                        <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem', background: 'none', border: 'none', width: '100%', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--ink)', borderRadius: '0.4rem', fontWeight: 500 }}><Eye size={14} /> Ver detalle</button>
+                        <button onClick={() => handleEditar(vacante.id)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem', background: 'none', border: 'none', width: '100%', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--ink)', borderRadius: '0.4rem', fontWeight: 500 }}><Pencil size={14} /> Editar</button>
+                        <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem', background: 'none', border: 'none', width: '100%', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--ink)', borderRadius: '0.4rem', fontWeight: 500 }}><Pause size={14} /> Pausar</button>
                         
                         {vacante.estado === 'ACTIVA' && (
-                          <button onClick={() => setVacanteACerrar(vacante)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', background: 'none', color: 'var(--flame)', border: 'none', width: '100%', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '0.3rem' }}><Ban size={14} /> Desactivar</button>
+                          <button onClick={() => setVacanteACerrar(vacante)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem', background: '#fef3c7', color: '#b45309', border: 'none', width: '100%', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700, borderRadius: '0.4rem' }}><Ban size={14} /> Desactivar</button>
                         )}
                         
-                        <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', background: 'none', color: '#dc2626', border: 'none', width: '100%', cursor: 'pointer', fontSize: '0.8rem', borderRadius: '0.3rem' }}><Trash2 size={14} /> Eliminar</button>
+                        <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem', background: '#fef2f2', color: '#dc2626', border: 'none', width: '100%', cursor: 'pointer', fontSize: '0.8rem', borderRadius: '0.4rem', fontWeight: 700 }}><Trash2 size={14} /> Eliminar</button>
                       </div>
                     )}
                   </div>
@@ -334,14 +356,14 @@ export default function MisVacantesPage() {
 
         {vacanteACerrar && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(27, 38, 50, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-            <div style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '1rem', maxWidth: '400px', width: '100%', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem', color: 'var(--ink)' }}>¿Cerrar vacante?</h3>
-              <p style={{ marginBottom: '1.5rem', color: 'var(--ink-70)', fontSize: '0.875rem' }}>
-                Estás a punto de cerrar la vacante <strong>{vacanteACerrar.titulo}</strong>. Esta acción es irreversible.
+            <div style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '1rem', maxWidth: '420px', width: '100%', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', borderTop: '4px solid var(--flame)' }}>
+              <h3 style={{ fontSize: '1.35rem', fontWeight: 800, marginBottom: '0.75rem', color: 'var(--ink)' }}>¿Cerrar vacante?</h3>
+              <p style={{ marginBottom: '1.5rem', color: 'var(--ink-70)', fontSize: '0.9rem', lineHeight: 1.5 }}>
+                Estás a punto de cerrar la vacante <strong style={{ color: 'var(--ink)' }}>{vacanteACerrar.titulo}</strong>. Esta acción es irreversible.
               </p>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                <button onClick={() => setVacanteACerrar(null)} disabled={isCerrando} style={{ padding: '0.5rem 1rem', border: '1px solid var(--oatmeal)', backgroundColor: 'transparent', color: 'var(--ink)', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 500 }}>Cancelar</button>
-                <button onClick={handleConfirmarCierre} disabled={isCerrando} style={{ padding: '0.5rem 1rem', border: 'none', backgroundColor: 'var(--flame)', color: 'var(--ink)', borderRadius: '0.5rem', cursor: isCerrando ? 'not-allowed' : 'pointer', opacity: isCerrando ? 0.7 : 1, fontWeight: 'bold' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                <button onClick={() => setVacanteACerrar(null)} disabled={isCerrando} style={{ padding: '0.65rem 1.25rem', border: '1.5px solid var(--oatmeal)', backgroundColor: 'transparent', color: 'var(--ink)', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
+                <button onClick={handleConfirmarCierre} disabled={isCerrando} style={{ padding: '0.65rem 1.25rem', border: 'none', backgroundColor: 'var(--flame)', color: 'var(--ink)', borderRadius: '0.5rem', cursor: isCerrando ? 'not-allowed' : 'pointer', opacity: isCerrando ? 0.7 : 1, fontWeight: 800 }}>
                   {isCerrando ? 'Cerrando...' : 'Sí, cerrar'}
                 </button>
               </div>
