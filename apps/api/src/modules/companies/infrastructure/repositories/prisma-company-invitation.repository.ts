@@ -94,11 +94,13 @@ export class PrismaCompanyInvitationRepository implements CompanyInvitationRepos
           },
         });
 
-        // Compatibilidad: hoy el acceso a la empresa se calcula con empresa.id_usuario.
-        await tx.empresa.updateMany({
-          where: { id: invitation.companyId, id_usuario: null },
-          data: { id_usuario: user.usuario_id },
-        });
+        // Compatibilidad: solo un administrador puede quedar como dueño (empresa.id_usuario).
+        if (invitation.role === 'administrador') {
+          await tx.empresa.updateMany({
+            where: { id: invitation.companyId, id_usuario: null },
+            data: { id_usuario: user.usuario_id },
+          });
+        }
 
         return 'activated';
       });
