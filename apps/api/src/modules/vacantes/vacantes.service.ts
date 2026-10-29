@@ -27,6 +27,23 @@ export class VacantesService {
     });
   }
 
+  async obtenerVacantePorId(idVacante: string, idUsuario: string) {
+    const empresa = await this.prisma.empresa.findFirst({
+      where: { id_usuario: idUsuario }
+    });
+
+    if (!empresa) {
+      throw new Error('Empresa no encontrada');
+    }
+
+    return this.prisma.vacante.findFirst({
+      where: { 
+        id: idVacante, 
+        id_empresa: empresa.id 
+      }
+    });
+  }
+
   async cerrarVacante(idVacante: string) {
     return this.prisma.vacante.update({
       where: { id: idVacante },
