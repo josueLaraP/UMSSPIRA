@@ -8,6 +8,7 @@ import {
   Pause, Trash2, Laptop, Building2, Users, BarChart2, Calendar, Ban, Plus
 } from 'lucide-react';
 import { getAccessToken } from '@/shared/services/auth-session';
+import { API_BASE_URL } from '@/shared/config/api';
 
 interface Vacante {
   id: string;
@@ -39,7 +40,7 @@ export default function MisVacantesPage() {
       setIsLoading(true);
       try {
         const token = getAccessToken();
-        const response = await fetch('http://localhost:3000/api/v1/vacantes/mis-vacantes', {
+        const response = await fetch(`${API_BASE_URL}/api/v1/vacantes/mis-vacantes`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -99,7 +100,7 @@ export default function MisVacantesPage() {
     setIsCerrando(true);
     try {
       const token = getAccessToken();
-      const response = await fetch(`http://localhost:3000/api/v1/vacantes/${vacanteACerrar.id}/cerrar`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/vacantes/${vacanteACerrar.id}/cerrar`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -120,6 +121,11 @@ export default function MisVacantesPage() {
 
   const handleEditar = (id: string) => {
     router.push(`/empresa/mis-vacantes/${id}/editar`);
+  };
+
+  const handleVerPostulantes = (id: string) => {
+    setMenuAbierto(null);
+    router.push(`/empresa/mis-vacantes/${id}/candidatos`);
   };
 
   const getBadgeStyle = (estado: string) => {
@@ -370,6 +376,10 @@ export default function MisVacantesPage() {
                       {menuAbierto === vacante.id && (
                         <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: '0.5rem', backgroundColor: '#fff', border: '1px solid var(--oatmeal)', borderRadius: '0.5rem', padding: '0.5rem', width: '180px', zIndex: 50, boxShadow: '0 8px 20px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column', gap: '0.25rem', textAlign: 'left' }}>
                           <button onClick={() => router.push(`/empresa/mis-vacantes/${vacante.id}`)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', background: 'none', border: 'none', width: '100%', cursor: 'pointer', fontSize: '0.8rem', color: '#111827', borderRadius: '0.4rem', fontWeight: 500 }}><Eye size={14} /> Ver detalle</button>
+                          
+                          {/* NUEVO: lleva a la lista de postulantes de esta vacante */}
+                          <button onClick={() => handleVerPostulantes(vacante.id)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', background: 'none', border: 'none', width: '100%', cursor: 'pointer', fontSize: '0.8rem', color: '#111827', borderRadius: '0.4rem', fontWeight: 500 }}><Users size={14} /> Ver postulantes</button>
+                          
                           <button onClick={() => handleEditar(vacante.id)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', background: 'none', border: 'none', width: '100%', cursor: 'pointer', fontSize: '0.8rem', color: '#111827', borderRadius: '0.4rem', fontWeight: 500 }}><Pencil size={14} /> Editar</button>
                           <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', background: 'none', border: 'none', width: '100%', cursor: 'pointer', fontSize: '0.8rem', color: '#111827', borderRadius: '0.4rem', fontWeight: 500 }}><Pause size={14} /> Pausar</button>
                           
