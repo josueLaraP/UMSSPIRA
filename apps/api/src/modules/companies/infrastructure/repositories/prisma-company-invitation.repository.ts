@@ -9,7 +9,7 @@ import type {
   ActivateInvitationInput,
   CompanyInvitationRepository,
   InvitationActivationResult,
-  NewCompanyInvitation,
+  NewCompanyRegistration,
 } from '../../application/ports/company-invitation-repository.port';
 import type { CompanyInvitation } from '../../domain/entities/company-invitation.entity';
 import { checkInvitationAvailability } from '../../domain/policies/company-invitation.policy';
@@ -110,38 +110,56 @@ export class PrismaCompanyInvitationRepository implements CompanyInvitationRepos
     }
   }
 
-  async emailHasAccount(email: string): Promise<boolean> {
-    const user = await this.prisma.usuario.findUnique({
-      where: { correo: email },
-      select: { usuario_id: true },
+    async findEmailsWithAccount(emails: string[]): Promise<string[]> {
+    if (emails.length === 0) {
+      return [];
+    }
+    const users = await this.prisma.usuario.findMany({
+      where: { correo: { in: emails } },
+      select: { correo: true },
     });
-    return Boolean(user);
+    return users.flatMap((user) => (user.correo ? [user.correo] : []));
   }
 
-  async createCompanyWithInvitation(input: NewCompanyInvitation): Promise<{ companyId: string }> {
+  async taxIdExists(taxId: string): Promise<boolean> {
+    const company = await this.prisma.empresa.findFirst({
+      where: { nit: taxId },
+      select: { id: true },
+    });
+    return Boolean(company);
+  }
+
+  async createCompanyWithInvitations(input: NewCompanyRegistration): Promise<{ companyId: string }> {
     return this.prisma.$transaction(async (tx) => {
       const company = await tx.empresa.create({
-        data: { razon_social: input.companyName, correo: input.email, fecha_registro: input.createdAt },
+        data: {
+          razon_social: input.companyName,
+          nit: input.taxId,
+          correo: input.contactEmail,
+          fecha_registro: input.createdAt,
+        },
         select: { id: true },
       });
-      await tx.empresaInvitacion.create({
-        data: {
-          id_empresa: company.id,
-          correo: input.email,
-          rol: input.role,
-          token_hash: input.tokenHash,
-          creado_por: input.createdBy,
-          creado_en: input.createdAt,
-          expira_en: input.expiresAt,
-        },
-      });
-      // El correo se guarda cifrado; el worker del proyecto lo envía (Mailpit local, Brevo en el deploy).
-      await tx.correoPendiente.create({
-        data: {
-          contenido: this.security.seal(input.mail),
-          expira_en: new Date(input.createdAt.getTime() + DAY_MS),
-        },
-      });
+      for (const account of input.accounts) {
+        await tx.empresaInvitacion.create({
+          data: {
+            id_empresa: company.id,
+            correo: account.email,
+            rol: account.role,
+            token_hash: account.tokenHash,
+            creado_por: input.createdBy,
+            creado_en: input.createdAt,
+            expira_en: input.expiresAt,
+          },
+        });
+        // El correo se guarda cifrado; el worker del proyecto lo envía (Mailpit local, Brevo en el deploy).
+        await tx.correoPendiente.create({
+          data: {
+            contenido: this.security.seal(account.mail),
+            expira_en: new Date(input.createdAt.getTime() + DAY_MS),
+          },
+        });
+      }
       return { companyId: company.id };
     });
   }

@@ -10,22 +10,37 @@ export interface ActivateInvitationInput {
   now: Date;
 }
 
-export interface NewCompanyInvitation {
-  companyName: string;
+export interface InvitationMailMessage {
+  to: string;
+  subject: string;
+  text: string;
+  html?: string;
+}
+
+export interface NewInvitationAccount {
   email: string;
   role: CompanyRole;
   tokenHash: string;
+  mail: InvitationMailMessage;
+}
+
+export interface NewCompanyRegistration {
+  companyName: string;
+  taxId: string;
+  contactEmail: string;
   createdBy: string;
   createdAt: Date;
   expiresAt: Date;
-  mail: { to: string; subject: string; text: string; html?: string };
+  accounts: NewInvitationAccount[];
 }
 
 export interface CompanyInvitationRepository {
   findByTokenHash(tokenHash: string): Promise<CompanyInvitation | null>;
   // Debe volver a comprobar la invitación dentro de la transacción (doble envío del formulario).
   activate(input: ActivateInvitationInput): Promise<InvitationActivationResult>;
-  emailHasAccount(email: string): Promise<boolean>;
-  // Crea empresa, invitación y correo pendiente en una sola transacción.
-  createCompanyWithInvitation(input: NewCompanyInvitation): Promise<{ companyId: string }>;
+    // Devuelve los correos de la lista que ya tienen una cuenta.
+  findEmailsWithAccount(emails: string[]): Promise<string[]>;
+  taxIdExists(taxId: string): Promise<boolean>;
+  // Crea la empresa, sus invitaciones y los correos pendientes en una sola transacción.
+  createCompanyWithInvitations(input: NewCompanyRegistration): Promise<{ companyId: string }>;
 }
