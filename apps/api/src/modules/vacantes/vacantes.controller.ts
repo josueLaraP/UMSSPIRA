@@ -13,6 +13,14 @@ export class VacantesController {
     return this.vacantesService.obtenerMisVacantes(idUsuario);
   }
 
+  @Get(':id')
+  async obtenerDetalle(
+    @Param('id') id: string,
+    @CurrentActor() actor: ActorContext
+  ) {
+    return this.vacantesService.obtenerVacantePorId(id, actor.id);
+  }
+
   @Patch(':id/cerrar')
   async cerrar(@Param('id') id: string) {
     return this.vacantesService.cerrarVacante(id);
