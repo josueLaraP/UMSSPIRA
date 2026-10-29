@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
   ArrowLeft, FolderOpen, Search, Eye, Pencil, MoreVertical, 
-  Pause, Trash2, Laptop, Building2, Users, BarChart2, Calendar, Ban
+  Pause, Trash2, Laptop, Building2, Users, BarChart2, Calendar, Ban, Plus
 } from 'lucide-react';
 import { getAccessToken } from '@/shared/services/auth-session';
 
@@ -150,27 +150,46 @@ export default function MisVacantesPage() {
     <div style={{ backgroundColor: 'var(--palladian)', minHeight: '100vh', padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         
-        {/* Volver */}
-        <Link href="/empresa" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: '#4b5563', textDecoration: 'none', marginBottom: '1.5rem', fontSize: '0.875rem', fontWeight: 600 }}>
-          <ArrowLeft size={16} /> Volver
+        {/* Volver Redirigiendo a Publicar */}
+        <Link href="/empresa/vacantes/publicar" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: '#4b5563', textDecoration: 'none', marginBottom: '1.5rem', fontSize: '0.875rem', fontWeight: 600, transition: 'all 0.2s' }}
+          onMouseEnter={(e) => e.currentTarget.style.color = 'var(--flame)'}
+          onMouseLeave={(e) => e.currentTarget.style.color = '#4b5563'}
+        >
+          <ArrowLeft size={16} /> Volver a Publicar Vacantes
         </Link>
 
         {/* TARJETA PRINCIPAL */}
         <div style={{ backgroundColor: '#fff', borderRadius: '1rem', border: '1px solid var(--oatmeal)', padding: '2.5rem', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
           
-          {/* HEADER */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2.5rem' }}>
-            <div style={{ padding: '0.75rem', backgroundColor: 'var(--flame)', borderRadius: '0.75rem', color: '#fff', boxShadow: '0 4px 12px rgba(255,177,98,0.3)' }}>
-              <FolderOpen size={28} />
+          {/* HEADER CON BOTÓN DE PUBLICAR */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '2.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ padding: '0.75rem', backgroundColor: 'var(--flame)', borderRadius: '0.75rem', color: '#fff', boxShadow: '0 4px 12px rgba(255,177,98,0.3)' }}>
+                <FolderOpen size={28} />
+              </div>
+              <div>
+                <h1 style={{ fontSize: '1.75rem', fontWeight: '800', color: '#111827', margin: 0 }}>
+                  Mis vacantes publicadas
+                </h1>
+                <p style={{ color: '#4b5563', fontSize: '0.95rem', margin: '0.2rem 0 0 0', fontWeight: 500 }}>
+                  Gestiona tus ofertas activas y revisa su estado
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 style={{ fontSize: '1.75rem', fontWeight: '800', color: '#111827', margin: 0 }}>
-                Mis vacantes publicadas
-              </h1>
-              <p style={{ color: '#4b5563', fontSize: '0.95rem', margin: '0.2rem 0 0 0', fontWeight: 500 }}>
-                Gestiona tus ofertas activas y revisa su estado
-              </p>
-            </div>
+            
+            <Link 
+              href="/empresa/vacantes/publicar" 
+              style={{ 
+                padding: '0.65rem 1.25rem', backgroundColor: 'var(--flame)', color: '#fff', 
+                borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '0.9rem', 
+                display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none',
+                boxShadow: '0 4px 12px rgba(255,177,98,0.3)', transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(255,177,98,0.4)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(255,177,98,0.3)'; }}
+            >
+              <Plus size={18} /> Publicar vacante
+            </Link>
           </div>
 
           {/* FILTROS */}
@@ -330,7 +349,6 @@ export default function MisVacantesPage() {
 
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem', position: 'relative' }}>
                       
-                      {/* OJO AQUÍ: Redirige a la nueva vista de detalle */}
                       <button 
                         onClick={() => router.push(`/empresa/mis-vacantes/${vacante.id}`)}
                         style={{ border: '1px solid var(--oatmeal)', background: '#fff', padding: '0.4rem', borderRadius: '0.4rem', cursor: 'pointer', color: '#374151', transition: 'all 0.15s' }}
@@ -339,14 +357,12 @@ export default function MisVacantesPage() {
                         <Eye size={16} />
                       </button>
                       
-                      {/* LÁPIZ */}
                       <button onClick={() => handleEditar(vacante.id)} style={{ border: '1px solid var(--oatmeal)', background: '#fff', padding: '0.4rem', borderRadius: '0.4rem', cursor: 'pointer', color: '#374151', transition: 'all 0.15s' }}
                         onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#111827'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#111827'; }}
                         onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.color = '#374151'; e.currentTarget.style.borderColor = 'var(--oatmeal)'; }}>
                         <Pencil size={16} />
                       </button>
 
-                      {/* TRES PUNTOS */}
                       <button onClick={() => setMenuAbierto(menuAbierto === vacante.id ? null : vacante.id)} style={{ border: '1px solid var(--oatmeal)', background: menuAbierto === vacante.id ? '#111827' : '#fff', padding: '0.4rem', borderRadius: '0.4rem', cursor: 'pointer', color: menuAbierto === vacante.id ? '#fff' : '#374151', transition: 'all 0.15s' }}>
                         <MoreVertical size={16} />
                       </button>
