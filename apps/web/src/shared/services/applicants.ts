@@ -2,18 +2,16 @@ import { Applicant } from "../types/applicant";
 
 /* ============================================================
    CONFIGURACIÓN
-   - Mientras no exista el endpoint: deja NEXT_PUBLIC_USE_MOCK sin definir (usa mock).
-   - Cuando exista: en .env.local pon
+   Los postulantes SON DATOS DE PRUEBA hasta que exista la API de la Epic 5.
+   Cuando exista, en .env.local pon:
        NEXT_PUBLIC_USE_MOCK=false
-       NEXT_PUBLIC_API_URL=http://localhost:3001
+       NEXT_PUBLIC_API_URL=http://localhost:3000
    ============================================================ */
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
-// Solo para probar los criterios con datos de prueba:
-//   "ok"    -> lista normal
-//   "empty" -> lista vacía (CA-07)
-//   "error" -> falla del servicio (CA-08 / CA-09)
+// Solo para probar con datos de prueba:
+//   "ok" | "empty" (CA-07) | "error" (CA-08 / CA-09)
 type MockScenario = "ok" | "empty" | "error";
 const MOCK_SCENARIO: MockScenario = "ok";
 
@@ -31,8 +29,6 @@ export class MatchEngineError extends Error {
    Si la API usa otros nombres de campo, solo se cambia aquí.
    Nunca se calcula ni se inventa el porcentaje (CA-02, CA-10).
    ============================================================ */
-
-// Forma que se espera de la API. Si usa otros nombres de campo, ajustarlos aquí.
 interface RawApplicant {
   id: string | number;
   name: string;
@@ -40,6 +36,8 @@ interface RawApplicant {
   location: string;
   experienceLevel: Applicant["experienceLevel"];
   status: Applicant["status"];
+  appliedAt?: string | null;
+  cvUrl?: string | null;
   matchPercentage?: number | null;
   skills?: Applicant["skills"];
 }
@@ -52,6 +50,8 @@ function normalizeApplicant(raw: RawApplicant): Applicant {
     location: raw.location,
     experienceLevel: raw.experienceLevel,
     status: raw.status,
+    appliedAt: raw.appliedAt ?? null,
+    cvUrl: raw.cvUrl ?? null,
     // Ejemplo si la API usara otros nombres: raw.porcentaje_match
     matchPercentage:
       typeof raw.matchPercentage === "number" && Number.isFinite(raw.matchPercentage)
@@ -71,7 +71,9 @@ const MOCK_APPLICANTS: Applicant[] = [
     email: "carlos.rojas@email.com",
     location: "Cochabamba, Bolivia",
     experienceLevel: "Senior",
-    status: "Postulado",
+    status: "En revisión",
+    appliedAt: "2025-09-10",
+    cvUrl: null,
     matchPercentage: 92,
     skills: [
       { skill: "Node.js", percentage: 100 },
@@ -87,8 +89,10 @@ const MOCK_APPLICANTS: Applicant[] = [
     name: "María López",
     email: "maria.lopez@email.com",
     location: "Cochabamba, Bolivia",
-    experienceLevel: "Mid-Level",
+    experienceLevel: "Senior",
     status: "En revisión",
+    appliedAt: "2025-09-08",
+    cvUrl: null,
     matchPercentage: 85,
     skills: [
       { skill: "Python", percentage: 95 },
@@ -99,31 +103,36 @@ const MOCK_APPLICANTS: Applicant[] = [
   },
   {
     id: "app-3",
-    name: "Carlos Fernández",
-    email: "carlos.fernandez@email.com",
+    name: "Luis Fernández",
+    email: "luis.fernandez@email.com",
     location: "Quillacollo, Cochabamba",
-    experienceLevel: "Junior",
-    status: "Postulado",
-    matchPercentage: 68,
+    experienceLevel: "Semi-Senior",
+    status: "Preseleccionado",
+    appliedAt: "2025-09-06",
+    cvUrl: null,
+    matchPercentage: 78,
     skills: [
-      { skill: "Python", percentage: 70 },
-      { skill: "Django", percentage: 65 },
-      { skill: "REST API", percentage: 70 },
-      { skill: "PostgreSQL", percentage: 60 },
+      { skill: "Java", percentage: 85 },
+      { skill: "Spring Boot", percentage: 80 },
+      { skill: "MySQL", percentage: 75 },
+      { skill: "Docker", percentage: 65 },
     ],
   },
   {
     id: "app-4",
-    name: "Andrea Rojas",
-    email: "andrea.rojas@email.com",
+    name: "Ana Torres",
+    email: "ana.torres@email.com",
     location: "Cochabamba, Bolivia",
-    experienceLevel: "Junior",
-    status: "Descartado",
-    matchPercentage: 45,
+    experienceLevel: "Semi-Senior",
+    status: "En revisión",
+    appliedAt: "2025-09-05",
+    cvUrl: null,
+    matchPercentage: 72,
     skills: [
-      { skill: "HTML/CSS", percentage: 80 },
-      { skill: "JavaScript", percentage: 50 },
-      { skill: "Python", percentage: 40 },
+      { skill: "Node.js", percentage: 80 },
+      { skill: "JavaScript", percentage: 75 },
+      { skill: "MongoDB", percentage: 70 },
+      { skill: "REST API", percentage: 65 },
     ],
   },
   {
@@ -132,17 +141,43 @@ const MOCK_APPLICANTS: Applicant[] = [
     name: "Luis Mamani",
     email: "luis.mamani@email.com",
     location: "Sacaba, Cochabamba",
-    experienceLevel: "Mid-Level",
+    experienceLevel: "Junior",
     status: "Postulado",
+    appliedAt: "2025-09-04",
+    cvUrl: null,
     matchPercentage: null,
     skills: null,
   },
 ];
 
 /* ============================================================
-   SERVICIO PÚBLICO
-   La interfaz solo usa esta función. Lanza MatchEngineError si falla.
+   HELPERS DE RED
    ============================================================ */
+async function apiGet(path: string): Promise<Response> {
+  try {
+    return await fetch(`${API_URL}${path}`, {
+      // credentials: "include",                          // si usan cookies de sesión
+      // headers: { Authorization: `Bearer ${token}` },   // si usan token
+    });
+  } catch {
+    // Error de conexión (CA-08)
+    throw new MatchEngineError();
+  }
+}
+
+async function readJson(res: Response): Promise<unknown> {
+  try {
+    return await res.json();
+  } catch {
+    throw new MatchEngineError();
+  }
+}
+
+/* ============================================================
+   SERVICIO PÚBLICO (lanzan MatchEngineError si fallan)
+   ============================================================ */
+
+/** Lista de postulantes de una vacante. */
 export async function getApplicantsByVacancy(vacancyId: string): Promise<Applicant[]> {
   if (USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 250));
@@ -151,30 +186,31 @@ export async function getApplicantsByVacancy(vacancyId: string): Promise<Applica
     return MOCK_APPLICANTS;
   }
 
-  // ---------- API REAL ----------
-  let res: Response;
-  try {
-    res = await fetch(`${API_URL}/api/v1/vacancies/${vacancyId}/applicants`, {
-      // credentials: "include",                 // si usan cookies de sesión
-      // headers: { Authorization: `Bearer ${token}` }, // si usan token
-    });
-  } catch {
-    // Error de conexión (CA-08)
-    throw new MatchEngineError();
-  }
+  const res = await apiGet(`/api/v1/vacancies/${vacancyId}/applicants`);
+  if (!res.ok) throw new MatchEngineError(); // Error del servidor (CA-09)
 
-  // Error del servidor (CA-09)
-  if (!res.ok) throw new MatchEngineError();
-
-  let data: unknown;
-  try {
-    data = await res.json();
-  } catch {
-    throw new MatchEngineError();
-  }
-
-  // Si la API responde { data: [...] }, cambiar por: (data as { data: RawApplicant[] }).data
+  const data = await readJson(res);
+  // Si la API responde { data: [...] }, usar: (data as { data: RawApplicant[] }).data
   if (!Array.isArray(data)) throw new MatchEngineError();
 
   return (data as RawApplicant[]).map(normalizeApplicant);
+}
+
+/** Detalle de un postulante. Devuelve null si no existe. */
+export async function getApplicantById(
+  vacancyId: string,
+  applicantId: string
+): Promise<Applicant | null> {
+  if (USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    if (MOCK_SCENARIO === "error") throw new MatchEngineError();
+    return MOCK_APPLICANTS.find((a) => a.id === applicantId) ?? null;
+  }
+
+  const res = await apiGet(`/api/v1/vacancies/${vacancyId}/applicants/${applicantId}`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new MatchEngineError();
+
+  const data = await readJson(res);
+  return normalizeApplicant(data as RawApplicant);
 }
