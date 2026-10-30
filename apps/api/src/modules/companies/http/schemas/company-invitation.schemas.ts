@@ -46,3 +46,12 @@ export const createCompanyInvitationSchema = z.strictObject({
 });
 
 export type CreateCompanyInvitationBody = z.output<typeof createCompanyInvitationSchema>;
+export const invitationIdSchema = z.uuid();
+
+export const companyRegistryQuerySchema = z.object({
+  search: z.string().trim().max(100).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(50).default(10),
+});
+
+export type CompanyRegistryQueryInput = z.output<typeof companyRegistryQuerySchema>;

@@ -5,17 +5,30 @@ import {
   REGISTRATION_SECURITY,
   type RegistrationSecurity,
 } from '../../../registrations/application/ports/registration-security.port';
+import type { CompanyRegistryQuery, RegistryCompanyRecord } from '../../application/contracts/company-registry';
 import type {
   ActivateInvitationInput,
   CompanyInvitationRepository,
   InvitationActivationResult,
   NewCompanyRegistration,
+  ReplaceInvitationInput,
 } from '../../application/ports/company-invitation-repository.port';
-import type { CompanyInvitation } from '../../domain/entities/company-invitation.entity';
+import {
+  COMPANY_ROLES,
+  INVITATION_STATUSES,
+  type CompanyInvitation,
+  type CompanyRole,
+  type InvitationStatus,
+} from '../../domain/entities/company-invitation.entity';
 import { checkInvitationAvailability } from '../../domain/policies/company-invitation.policy';
 import { companyInvitationSelect, toCompanyInvitation } from '../translators/company-invitation.translator';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+const isCompanyRole = (value: string): value is CompanyRole =>
+  (COMPANY_ROLES as readonly string[]).includes(value);
+const isInvitationStatus = (value: string): value is InvitationStatus =>
+  (INVITATION_STATUSES as readonly string[]).includes(value);
 
 @Injectable()
 export class PrismaCompanyInvitationRepository implements CompanyInvitationRepository {
@@ -163,6 +176,115 @@ export class PrismaCompanyInvitationRepository implements CompanyInvitationRepos
         });
       }
       return { companyId: company.id };
+    });
+  }
+    async findById(id: string): Promise<CompanyInvitation | null> {
+    const record = await this.prisma.empresaInvitacion.findUnique({
+      where: { id },
+      select: companyInvitationSelect,
+    });
+    return record ? toCompanyInvitation(record) : null;
+  }
+
+  async listRegistry({
+    search,
+    page,
+    pageSize,
+  }: CompanyRegistryQuery): Promise<{ items: RegistryCompanyRecord[]; total: number }> {
+    // Solo empresas registradas por la UMSS (las que tienen invitaciones).
+    const where: Prisma.EmpresaWhereInput = {
+      empresa_invitacion_registros: { some: {} },
+      ...(search
+        ? {
+            OR: [
+              { razon_social: { contains: search, mode: 'insensitive' as const } },
+              { nit: { contains: search } },
+            ],
+          }
+        : {}),
+    };
+    const [total, records] = await this.prisma.$transaction([
+      this.prisma.empresa.count({ where }),
+      this.prisma.empresa.findMany({
+        where,
+        orderBy: { fecha_registro: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        select: {
+          id: true,
+          razon_social: true,
+          nit: true,
+          fecha_registro: true,
+          empresa_invitacion_registros: {
+            where: { estado: { not: 'cancelada' } },
+            orderBy: { creado_en: 'asc' },
+            select: {
+              id: true,
+              correo: true,
+              rol: true,
+              estado: true,
+              creado_en: true,
+              expira_en: true,
+              aceptado_en: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    const items = records.map((company) => ({
+      id: company.id,
+      name: company.razon_social ?? '',
+      taxId: company.nit,
+      registeredAt: company.fecha_registro,
+      invitations: company.empresa_invitacion_registros.flatMap((invitation) =>
+        isCompanyRole(invitation.rol) && isInvitationStatus(invitation.estado)
+          ? [
+              {
+                id: invitation.id,
+                email: invitation.correo,
+                role: invitation.rol,
+                status: invitation.estado,
+                createdAt: invitation.creado_en,
+                expiresAt: invitation.expira_en,
+                acceptedAt: invitation.aceptado_en,
+              },
+            ]
+          : [],
+      ),
+    }));
+    return { items, total };
+  }
+
+  async replaceInvitation(input: ReplaceInvitationInput): Promise<{ invitationId: string } | null> {
+    return this.prisma.$transaction(async (tx) => {
+      // Primero se cancela la anterior: el índice único admite una sola pendiente por correo y empresa.
+      const cancelled = await tx.empresaInvitacion.updateMany({
+        where: { id: input.previousId, estado: { in: ['pendiente', 'vencida'] }, aceptado_en: null },
+        data: { estado: 'cancelada' },
+      });
+      if (cancelled.count === 0) {
+        return null;
+      }
+      const created = await tx.empresaInvitacion.create({
+        data: {
+          id_empresa: input.companyId,
+          correo: input.email,
+          rol: input.role,
+          token_hash: input.tokenHash,
+          creado_por: input.createdBy,
+          creado_en: input.createdAt,
+          expira_en: input.expiresAt,
+        },
+        select: { id: true },
+      });
+      await tx.correoPendiente.create({
+        data: {
+          contenido: this.security.seal(input.mail),
+          expira_en: new Date(input.createdAt.getTime() + DAY_MS),
+        },
+      });
+      return { invitationId: created.id };
     });
   }
 }
