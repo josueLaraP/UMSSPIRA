@@ -6,57 +6,109 @@ import { CreateCompanyInvitationUseCase } from './create-company-invitation.use-
 const now = new Date('2026-10-27T12:00:00Z');
 const actor = { id: 'admin-id', role: 'administrador' } as ActorContext;
 
-function build(hasAccount = false) {
-  const emailHasAccount = jest.fn().mockResolvedValue(hasAccount);
-  const createCompanyWithInvitation = jest.fn().mockResolvedValue({ companyId: 'empresa-1' });
+const input = {
+  companyName: 'TechSolutions S.A.',
+  taxId: '1023456029',
+  accounts: [
+    { email: 'Gerencia@Empresa.com ', role: 'administrador' as const },
+    { email: 'rrhh@empresa.com', role: 'reclutador' as const },
+  ],
+};
+
+function build({ taxIdExists = false, emailsWithAccount = [] as string[] } = {}) {
+  const repository = {
+    taxIdExists: jest.fn().mockResolvedValue(taxIdExists),
+    findEmailsWithAccount: jest.fn().mockResolvedValue(emailsWithAccount),
+    createCompanyWithInvitations: jest.fn().mockResolvedValue({ companyId: 'empresa-1' }),
+  };
   const composeMail = jest.fn().mockReturnValue({ subject: 'Asunto', text: 'Texto', html: '<p>Html</p>' });
-  const repository = { emailHasAccount, createCompanyWithInvitation } as unknown as CompanyInvitationRepository;
-  const useCase = new CreateCompanyInvitationUseCase(repository, composeMail, 'http://web.test/', () => now);
-  return { useCase, createCompanyWithInvitation, composeMail };
+  const useCase = new CreateCompanyInvitationUseCase(
+    repository as unknown as CompanyInvitationRepository,
+    composeMail,
+    'http://web.test/',
+    () => now,
+  );
+  return { useCase, repository, composeMail };
 }
 
 describe('CreateCompanyInvitationUseCase', () => {
-  it('crea la empresa y una invitación de administrador vigente por 7 días', async () => {
-    const { useCase, createCompanyWithInvitation } = build();
-    const result = await useCase.execute(actor, { companyName: 'TechSolutions S.A.', email: 'nueva@empresa.com' });
+  it('registra la empresa con una invitación por cuenta, vigentes por 7 días', async () => {
+    const { useCase, repository } = build();
+    const result = await useCase.execute(actor, input);
 
+    const expiresAt = new Date('2026-11-03T12:00:00Z');
     expect(result).toEqual({
       companyId: 'empresa-1',
-      email: 'nueva@empresa.com',
-      expiresAt: new Date('2026-11-03T12:00:00Z'),
+      companyName: 'TechSolutions S.A.',
+      taxId: '1023456029',
+      invitations: [
+        { email: 'gerencia@empresa.com', role: 'administrador', expiresAt },
+        { email: 'rrhh@empresa.com', role: 'reclutador', expiresAt },
+      ],
     });
-    expect(createCompanyWithInvitation).toHaveBeenCalledWith(
-      expect.objectContaining({ role: 'administrador', createdBy: 'admin-id', createdAt: now }),
-    );
+    const saved = repository.createCompanyWithInvitations.mock.calls[0][0];
+    expect(saved).toMatchObject({
+      taxId: '1023456029',
+      contactEmail: 'gerencia@empresa.com',
+      createdBy: 'admin-id',
+      createdAt: now,
+      expiresAt,
+    });
+    expect(saved.accounts).toHaveLength(2);
   });
 
-  it('envía un enlace cuyo token corresponde al hash guardado', async () => {
-    const { useCase, createCompanyWithInvitation, composeMail } = build();
-    await useCase.execute(actor, { companyName: 'TechSolutions S.A.', email: 'nueva@empresa.com' });
+  it('genera un token distinto por cuenta y lo envía en el enlace', async () => {
+    const { useCase, repository, composeMail } = build();
+    await useCase.execute(actor, input);
 
-    const { activationUrl } = composeMail.mock.calls[0][0];
-    expect(activationUrl).toMatch(/^http:\/\/web\.test\/company-invitation\/[A-Za-z0-9_-]{43}$/);
-    const token = activationUrl.split('/').pop();
-    expect(createCompanyWithInvitation.mock.calls[0][0].tokenHash).toBe(hashInvitationToken(token));
-    expect(createCompanyWithInvitation.mock.calls[0][0].mail).toEqual({
-      to: 'nueva@empresa.com',
+    const saved = repository.createCompanyWithInvitations.mock.calls[0][0];
+    composeMail.mock.calls.forEach(([mailInput]: [{ activationUrl: string }], index: number) => {
+      expect(mailInput.activationUrl).toMatch(/^http:\/\/web\.test\/company-invitation\/[A-Za-z0-9_-]{43}$/);
+      const token = mailInput.activationUrl.split('/').pop() as string;
+      expect(saved.accounts[index].tokenHash).toBe(hashInvitationToken(token));
+    });
+    expect(saved.accounts[0].tokenHash).not.toBe(saved.accounts[1].tokenHash);
+    expect(saved.accounts[1].mail).toEqual({
+      to: 'rrhh@empresa.com',
       subject: 'Asunto',
       text: 'Texto',
       html: '<p>Html</p>',
     });
   });
 
-  it('normaliza el correo', async () => {
+  it('exige al menos un administrador', async () => {
+    const { useCase, repository } = build();
+    await expect(
+      useCase.execute(actor, { ...input, accounts: [{ email: 'rrhh@empresa.com', role: 'reclutador' }] }),
+    ).rejects.toMatchObject({ code: 'COMPANY_ACCOUNTS_INVALID' });
+    expect(repository.createCompanyWithInvitations).not.toHaveBeenCalled();
+  });
+
+  it('rechaza correos repetidos aunque cambien mayúsculas', async () => {
     const { useCase } = build();
-    const result = await useCase.execute(actor, { companyName: 'X', email: '  Nueva@Empresa.COM ' });
-    expect(result.email).toBe('nueva@empresa.com');
+    await expect(
+      useCase.execute(actor, {
+        ...input,
+        accounts: [
+          { email: 'a@empresa.com', role: 'administrador' },
+          { email: 'A@EMPRESA.COM', role: 'reclutador' },
+        ],
+      }),
+    ).rejects.toMatchObject({ code: 'COMPANY_ACCOUNTS_INVALID' });
+  });
+
+  it('rechaza un NIT ya registrado', async () => {
+    const { useCase, repository } = build({ taxIdExists: true });
+    await expect(useCase.execute(actor, input)).rejects.toMatchObject({ code: 'COMPANY_TAX_ID_IN_USE' });
+    expect(repository.createCompanyWithInvitations).not.toHaveBeenCalled();
   });
 
   it('rechaza un correo que ya tiene cuenta', async () => {
-    const { useCase, createCompanyWithInvitation } = build(true);
-    await expect(
-      useCase.execute(actor, { companyName: 'X', email: 'empresa@umss.edu.bo' }),
-    ).rejects.toMatchObject({ code: 'INVITATION_EMAIL_IN_USE' });
-    expect(createCompanyWithInvitation).not.toHaveBeenCalled();
+    const { useCase, repository } = build({ emailsWithAccount: ['rrhh@empresa.com'] });
+    await expect(useCase.execute(actor, input)).rejects.toMatchObject({
+      code: 'INVITATION_EMAIL_IN_USE',
+      message: 'El correo rrhh@empresa.com ya tiene una cuenta registrada',
+    });
+    expect(repository.createCompanyWithInvitations).not.toHaveBeenCalled();
   });
 });

@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { COMPANY_ROLES } from '../../domain/entities/company-invitation.entity';
+import { MAX_INITIAL_ACCOUNTS } from '../../domain/policies/company-registration.policy';
 
 // El formato exacto del token lo valida el caso de uso (responde INVITATION_TOKEN_INVALID).
 export const invitationTokenSchema = z.string().max(128);
@@ -23,9 +25,33 @@ export const activateCompanyInvitationSchema = z
 
 export type ActivateCompanyInvitationBody = z.output<typeof activateCompanyInvitationSchema>;
 
+// US-1.4: NIT boliviano, solo dígitos.
+export const companyTaxIdSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{7,15}$/, 'El NIT debe tener entre 7 y 15 dígitos, sin letras ni guiones');
+
 export const createCompanyInvitationSchema = z.strictObject({
-  companyName: z.string().trim().min(1).max(100),
-  email: z.string().trim().toLowerCase().max(254).pipe(z.email()),
+  companyName: z.string().trim().min(2, 'Ingresa la razón social').max(100),
+  taxId: companyTaxIdSchema,
+  accounts: z
+    .array(
+      z.strictObject({
+        email: z.string().trim().toLowerCase().max(254).pipe(z.email('Correo no válido')),
+        role: z.enum(COMPANY_ROLES),
+      }),
+    )
+    .min(1, 'Agrega al menos una cuenta inicial')
+    .max(MAX_INITIAL_ACCOUNTS),
 });
 
 export type CreateCompanyInvitationBody = z.output<typeof createCompanyInvitationSchema>;
+export const invitationIdSchema = z.uuid();
+
+export const companyRegistryQuerySchema = z.object({
+  search: z.string().trim().max(100).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(50).default(10),
+});
+
+export type CompanyRegistryQueryInput = z.output<typeof companyRegistryQuerySchema>;

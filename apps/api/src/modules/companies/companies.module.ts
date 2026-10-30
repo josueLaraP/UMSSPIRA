@@ -11,6 +11,8 @@ import { UpdateCompanyProfileController } from './http/controllers/update-compan
 import { ValidateCompanyInvitationController } from './http/controllers/validate-company-invitation.controller';
 import { ActivateCompanyInvitationController } from './http/controllers/activate-company-invitation.controller';
 import { CreateCompanyInvitationController } from './http/controllers/create-company-invitation.controller';
+import { ListCompanyRegistryController } from './http/controllers/list-company-registry.controller';
+import { ResendCompanyInvitationController } from './http/controllers/resend-company-invitation.controller';
 
 // HU-03: Gestión de usuarios
 import { CompanyUsersController } from './company-users.controller';
@@ -27,6 +29,8 @@ import { CompanyUsersService } from './company-users.service';
     ValidateCompanyInvitationController,
     ActivateCompanyInvitationController,
     CreateCompanyInvitationController,
+    ListCompanyRegistryController,
+    ResendCompanyInvitationController,
     // HU-03
     CompanyUsersController,
   ],

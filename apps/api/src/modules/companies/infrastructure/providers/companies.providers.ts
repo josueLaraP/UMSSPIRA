@@ -17,6 +17,8 @@ import { UpdateCompanyProfileUseCase } from '../../application/use-cases/update-
 import { ValidateCompanyInvitationUseCase } from '../../application/use-cases/validate-company-invitation.use-case';
 import { ActivateCompanyInvitationUseCase } from '../../application/use-cases/activate-company-invitation.use-case';
 import { CreateCompanyInvitationUseCase } from '../../application/use-cases/create-company-invitation.use-case';
+import { ListCompanyRegistryUseCase } from '../../application/use-cases/list-company-registry.use-case';
+import { ResendCompanyInvitationUseCase } from '../../application/use-cases/resend-company-invitation.use-case';
 import { buildCompanyInvitationEmail } from '../notifications/company-invitation-email';
 import { PrismaCompanyProfileRepository } from '../repositories/prisma-company-profile.repository';
 import { PrismaCompanyInvitationRepository } from '../repositories/prisma-company-invitation.repository';
@@ -62,6 +64,19 @@ export const companiesProviders: Provider[] = [
       // La primera URL de CORS_ORIGINS es la web pública (en local, http://localhost:3001).
       const webUrl = config.get('CORS_ORIGINS', { infer: true })[0] ?? 'http://localhost:3001';
       return new CreateCompanyInvitationUseCase(repository, buildCompanyInvitationEmail, webUrl);
+    },
+  },
+    {
+    provide: ListCompanyRegistryUseCase,
+    inject: [COMPANY_INVITATION_REPOSITORY],
+    useFactory: (repository: CompanyInvitationRepository) => new ListCompanyRegistryUseCase(repository),
+  },
+  {
+    provide: ResendCompanyInvitationUseCase,
+    inject: [COMPANY_INVITATION_REPOSITORY, ConfigService],
+    useFactory: (repository: CompanyInvitationRepository, config: ConfigService<Environment, true>) => {
+      const webUrl = config.get('CORS_ORIGINS', { infer: true })[0] ?? 'http://localhost:3001';
+      return new ResendCompanyInvitationUseCase(repository, buildCompanyInvitationEmail, webUrl);
     },
   },
 ];
